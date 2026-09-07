@@ -534,7 +534,7 @@ int main(void)
     /* 256-byte peripheral windows at 0x8000_0x00 */
     add_peripheral_io("GPIO",      0x80000000);
     add_peripheral_io("UART0",     0x80000100);
-    // add_peripheral_io("TIMER",     0x80000200);
+    add_peripheral_io("FIFO",      0x80000200);
     // add_peripheral_io("HDMI_CTRL", 0x80000300);
     // add_peripheral_io("I2C",       0x80000400);
     // add_peripheral_io("QSPI",      0x80000500);

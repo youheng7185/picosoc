@@ -123,7 +123,7 @@ module picosoc (
     wire        s2_axi_rready;
 
     // =====================================================
-    // Slave 3: UART (0x90000000)
+    // Slave 3: UART
     // =====================================================
     wire [31:0] s3_axi_awaddr;
     wire        s3_axi_awvalid;
@@ -142,6 +142,27 @@ module picosoc (
     wire [1:0]  s3_axi_rresp;
     wire        s3_axi_rvalid;
     wire        s3_axi_rready;
+
+    // =====================================================
+    // Slave 3: fifo loopback
+    // =====================================================
+    wire [31:0] s4_axi_awaddr;
+    wire        s4_axi_awvalid;
+    wire        s4_axi_awready;
+    wire [31:0] s4_axi_wdata;
+    wire [3:0]  s4_axi_wstrb;
+    wire        s4_axi_wvalid;
+    wire        s4_axi_wready;
+    wire [1:0]  s4_axi_bresp;
+    wire        s4_axi_bvalid;
+    wire        s4_axi_bready;
+    wire [31:0] s4_axi_araddr;
+    wire        s4_axi_arvalid;
+    wire        s4_axi_arready;
+    wire [31:0] s4_axi_rdata;
+    wire [1:0]  s4_axi_rresp;
+    wire        s4_axi_rvalid;
+    wire        s4_axi_rready;    
 
     // PCPI (tied off — no co-processor)
     wire        pcpi_valid;
@@ -328,7 +349,25 @@ module picosoc (
         .s3_axi_rdata   (s3_axi_rdata),
         .s3_axi_rresp   (s3_axi_rresp),
         .s3_axi_rvalid  (s3_axi_rvalid),
-        .s3_axi_rready  (s3_axi_rready)
+        .s3_axi_rready  (s3_axi_rready),
+
+        .s4_axi_awaddr  (s4_axi_awaddr),
+        .s4_axi_awvalid (s4_axi_awvalid),
+        .s4_axi_awready (s4_axi_awready),
+        .s4_axi_wdata   (s4_axi_wdata),
+        .s4_axi_wstrb   (s4_axi_wstrb),
+        .s4_axi_wvalid  (s4_axi_wvalid),
+        .s4_axi_wready  (s4_axi_wready),
+        .s4_axi_bresp   (s4_axi_bresp),
+        .s4_axi_bvalid  (s4_axi_bvalid),
+        .s4_axi_bready  (s4_axi_bready),
+        .s4_axi_araddr  (s4_axi_araddr),
+        .s4_axi_arvalid (s4_axi_arvalid),
+        .s4_axi_arready (s4_axi_arready),
+        .s4_axi_rdata   (s4_axi_rdata),
+        .s4_axi_rresp   (s4_axi_rresp),
+        .s4_axi_rvalid  (s4_axi_rvalid),
+        .s4_axi_rready  (s4_axi_rready)        
     );
 
     // =========================================================
@@ -468,6 +507,37 @@ module picosoc (
 
         .uart_rx_i (uart_rx_i),
         .uart_tx_o (uart_tx_o)
+    );
+
+    axi_fifo #(
+        .C_AXI_ADDR_WIDTH(4)
+    ) fifo (
+        .S_AXI_ACLK    (clk_i),
+        .S_AXI_ARESETN (rst_n),
+
+        .S_AXI_AWVALID (s4_axi_awvalid),
+        .S_AXI_AWREADY (s4_axi_awready),
+        .S_AXI_AWADDR  (s4_axi_awaddr[3:0]),
+        .S_AXI_AWPROT  (3'b0),
+
+        .S_AXI_WVALID  (s4_axi_wvalid),
+        .S_AXI_WREADY  (s4_axi_wready),
+        .S_AXI_WDATA   (s4_axi_wdata),
+        .S_AXI_WSTRB   (s4_axi_wstrb),
+
+        .S_AXI_BVALID  (s4_axi_bvalid),
+        .S_AXI_BREADY  (s4_axi_bready),
+        .S_AXI_BRESP   (s4_axi_bresp),
+
+        .S_AXI_ARVALID (s4_axi_arvalid),
+        .S_AXI_ARREADY (s4_axi_arready),
+        .S_AXI_ARADDR  (s4_axi_araddr[3:0]),
+        .S_AXI_ARPROT  (3'b0),
+
+        .S_AXI_RVALID  (s4_axi_rvalid),
+        .S_AXI_RREADY  (s4_axi_rready),
+        .S_AXI_RDATA   (s4_axi_rdata),
+        .S_AXI_RRESP   (s4_axi_rresp)
     );
 
 endmodule

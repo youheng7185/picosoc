@@ -45,7 +45,13 @@ picosoc_SRC = rtl/picosoc.v \
 				rtl/axi_uart/axi_uart.v \
 				rtl/axi_uart/uart_rx.v \
 				rtl/axi_uart/uart_tx.v \
-				rtl/axi_uart/uart.v
+				rtl/axi_uart/uart.v \
+				rtl/axi_qspi_nor/axi_qspi_nor_xilinx.v \
+				rtl/axi_qspi_nor/axi_qspi_nor.v \
+				rtl/axi_qspi_nor/ODDR.v \
+				rtl/axi_qspi_nor/qspi_nor_master.v \
+				rtl/fifo/fifo.v \
+				rtl/axi_fifo/axi_fifo.v
 
 $(picosoc_OBJ)/V$(picosoc_TOP).mk: $(picosoc_SRC) $(picosoc_TB)
 	verilator $(VERILATOR_FLAGS) \

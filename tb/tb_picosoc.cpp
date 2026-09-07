@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
     delay(dut, tfp, 10);
     dut->uart_rx_i = 1;
-    delay(dut, tfp, 50000);
+    delay(dut, tfp, 150000);
 
     // Finish
     dut->final();

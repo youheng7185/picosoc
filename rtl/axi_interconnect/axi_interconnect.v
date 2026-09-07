@@ -133,7 +133,32 @@ module axi_interconnect (
     input  wire [31:0] s3_axi_rdata,
     input  wire [1:0]  s3_axi_rresp,
     input  wire        s3_axi_rvalid,
-    output wire        s3_axi_rready
+    output wire        s3_axi_rready,
+
+    // =====================================================
+    // Slave 4: FIFO (0x80000200)
+    // =====================================================
+    output wire [31:0] s4_axi_awaddr,
+    output wire        s4_axi_awvalid,
+    input  wire        s4_axi_awready,
+
+    output wire [31:0] s4_axi_wdata,
+    output wire [3:0]  s4_axi_wstrb,
+    output wire        s4_axi_wvalid,
+    input  wire        s4_axi_wready,
+
+    input  wire [1:0]  s4_axi_bresp,
+    input  wire        s4_axi_bvalid,
+    output wire        s4_axi_bready,
+
+    output wire [31:0] s4_axi_araddr,
+    output wire        s4_axi_arvalid,
+    input  wire        s4_axi_arready,
+
+    input  wire [31:0] s4_axi_rdata,
+    input  wire [1:0]  s4_axi_rresp,
+    input  wire        s4_axi_rvalid,
+    output wire        s4_axi_rready
 );
 
     // =====================================================
@@ -145,31 +170,32 @@ module axi_interconnect (
     localparam [31:0] DATA_MEM_BYTES       = 32'h00008000;
     localparam [31:0] GPIO                 = 32'h80000000;
     localparam [31:0] UART0                = 32'h80000100;
+    localparam [31:0] FIFO                 = 32'h80000200;
     localparam [31:0] PERIPH_MASK_256  = 32'hFFFF_FF00;
     localparam [31:0] PERIPH_MASK_4K   = 32'hFFFF_F000;
 
     // =====================================================
-    // Slave selection signals (4 slaves)
+    // Slave selection signals (5 slaves)
     // =====================================================
-    reg [3:0] aw_slave_sel;
-    reg [3:0] ar_slave_sel;
+    reg [4:0] aw_slave_sel;
+    reg [4:0] ar_slave_sel;
     reg default_bvalid_q;
     reg default_rvalid_q;
     wire default_write_select =
            m_axi_awvalid
-        && (aw_slave_sel == 4'b0);
+        && (aw_slave_sel == 5'b0);
     wire default_read_select =
            m_axi_arvalid
-        && (ar_slave_sel == 4'b0);
+        && (ar_slave_sel == 5'b0);
 
     // =====================================================
     // Address decode function
     // =====================================================
-    function [3:0] decode_addr;
+    function [4:0] decode_addr;
         input [31:0] addr;
-        reg [3:0] sel;
+        reg [4:0] sel;
         begin
-            sel = 4'b0;
+            sel = 5'b0;
             if ((addr >= INSTR_MEM)
                     && (addr < INSTR_MEM + INSTR_MEM_BYTES))
                 sel[0] = 1'b1;
@@ -180,6 +206,8 @@ module axi_interconnect (
                 sel[2] = 1'b1;
             else if ((addr & PERIPH_MASK_256) == UART0)
                 sel[3] = 1'b1;
+            else if ((addr & PERIPH_MASK_256) == FIFO)
+                sel[4] = 1'b1;
             decode_addr = sel;
         end
     endfunction
@@ -188,30 +216,30 @@ module axi_interconnect (
     // Write address channel decode
     // =====================================================
     always @(*) begin
-        aw_slave_sel = 4'b0;
+        aw_slave_sel = 5'b0;
         if (m_axi_awvalid)
             aw_slave_sel = decode_addr(m_axi_awaddr);
     end
 
-    reg [3:0] write_slave_sel_q;
+    reg [4:0] write_slave_sel_q;
     reg        write_aw_seen_q;
     reg        write_w_seen_q;
     wire       write_route_captured = write_aw_seen_q || write_w_seen_q;
-    wire [3:0] write_slave_sel = write_route_captured
+    wire [4:0] write_slave_sel = write_route_captured
                                 ? write_slave_sel_q : aw_slave_sel;
     wire write_default_select = write_route_captured
-                              ? (write_slave_sel == 4'b0)
-                              : (m_axi_awvalid && (aw_slave_sel == 4'b0));
+                              ? (write_slave_sel == 5'b0)
+                              : (m_axi_awvalid && (aw_slave_sel == 5'b0));
     wire write_aw_fire = m_axi_awvalid && m_axi_awready;
     wire write_w_fire  = m_axi_wvalid  && m_axi_wready;
 
     always @(posedge clk_i or negedge rst_ni) begin
         if (!rst_ni) begin
-            write_slave_sel_q <= 4'b0;
+            write_slave_sel_q <= 5'b0;
             write_aw_seen_q   <= 1'b0;
             write_w_seen_q    <= 1'b0;
         end else if (m_axi_bvalid && m_axi_bready) begin
-            write_slave_sel_q <= 4'b0;
+            write_slave_sel_q <= 5'b0;
             write_aw_seen_q   <= 1'b0;
             write_w_seen_q    <= 1'b0;
         end else begin
@@ -231,7 +259,7 @@ module axi_interconnect (
     // Read address channel decode
     // =====================================================
     always @(*) begin
-        ar_slave_sel = 4'b0;
+        ar_slave_sel = 5'b0;
         if (m_axi_arvalid)
             ar_slave_sel = decode_addr(m_axi_araddr);
     end
@@ -251,11 +279,15 @@ module axi_interconnect (
     assign s3_axi_awaddr  = m_axi_awaddr;
     assign s3_axi_awvalid = m_axi_awvalid & aw_slave_sel[3];
 
+    assign s4_axi_awaddr  = m_axi_awaddr;
+    assign s4_axi_awvalid = m_axi_awvalid & aw_slave_sel[4];
+
     assign m_axi_awready = !write_aw_seen_q &&
                            ((s0_axi_awready & aw_slave_sel[0]) |
                             (s1_axi_awready & aw_slave_sel[1]) |
                             (s2_axi_awready & aw_slave_sel[2]) |
                             (s3_axi_awready & aw_slave_sel[3]) |
+                            (s4_axi_awready & aw_slave_sel[4]) |
                             (default_write_select & !default_bvalid_q));
 
     // =====================================================
@@ -277,18 +309,23 @@ module axi_interconnect (
     assign s3_axi_wstrb  = m_axi_wstrb;
     assign s3_axi_wvalid = m_axi_wvalid & write_slave_sel[3];
 
+    assign s4_axi_wdata  = m_axi_wdata;
+    assign s4_axi_wstrb  = m_axi_wstrb;
+    assign s4_axi_wvalid = m_axi_wvalid & write_slave_sel[4];
+
     assign m_axi_wready = !write_w_seen_q &&
                           ((s0_axi_wready & write_slave_sel[0]) |
                            (s1_axi_wready & write_slave_sel[1]) |
                            (s2_axi_wready & write_slave_sel[2]) |
                            (s3_axi_wready & write_slave_sel[3]) |
+                           (s4_axi_wready & write_slave_sel[4]) |
                            (write_default_select & !default_bvalid_q));
 
     always @(posedge clk_i or negedge rst_ni) begin
         if (!rst_ni)
             default_bvalid_q <= 1'b0;
         else if (write_route_captured
-                && (write_slave_sel == 4'b0)
+                && (write_slave_sel == 5'b0)
                 && write_aw_seen_q && write_w_seen_q)
             default_bvalid_q <= 1'b1;
         else if (default_bvalid_q && m_axi_bready)
@@ -302,16 +339,18 @@ module axi_interconnect (
     assign s1_axi_bready = m_axi_bready;
     assign s2_axi_bready = m_axi_bready;
     assign s3_axi_bready = m_axi_bready;
+    assign s4_axi_bready = m_axi_bready;
 
     assign m_axi_bresp = s0_axi_bvalid ? s0_axi_bresp :
                          s1_axi_bvalid ? s1_axi_bresp :
                          s2_axi_bvalid ? s2_axi_bresp :
                          s3_axi_bvalid ? s3_axi_bresp :
+                         s4_axi_bvalid ? s4_axi_bresp :
                          default_bvalid_q ? 2'b11 :
                          2'b00;
 
     assign m_axi_bvalid = s0_axi_bvalid | s1_axi_bvalid | s2_axi_bvalid | s3_axi_bvalid |
-                         
+                          s4_axi_bvalid |
                           default_bvalid_q;
 
     // =====================================================
@@ -329,10 +368,14 @@ module axi_interconnect (
     assign s3_axi_araddr  = m_axi_araddr;
     assign s3_axi_arvalid = m_axi_arvalid & ar_slave_sel[3];
 
+    assign s4_axi_araddr  = m_axi_araddr;
+    assign s4_axi_arvalid = m_axi_arvalid & ar_slave_sel[4];
+
     assign m_axi_arready = (s0_axi_arready & ar_slave_sel[0]) |
                            (s1_axi_arready & ar_slave_sel[1]) |
                            (s2_axi_arready & ar_slave_sel[2]) |
                            (s3_axi_arready & ar_slave_sel[3]) |
+                           (s4_axi_arready & ar_slave_sel[4]) |
                            (default_read_select & !default_rvalid_q);
 
     always @(posedge clk_i or negedge rst_ni) begin
@@ -351,11 +394,13 @@ module axi_interconnect (
     assign s1_axi_rready = m_axi_rready;
     assign s2_axi_rready = m_axi_rready;
     assign s3_axi_rready = m_axi_rready;
+    assign s4_axi_rready = m_axi_rready;
 
     assign m_axi_rdata  = s0_axi_rvalid ? s0_axi_rdata :
                          s1_axi_rvalid ? s1_axi_rdata :
                          s2_axi_rvalid ? s2_axi_rdata :
                          s3_axi_rvalid ? s3_axi_rdata :
+                         s4_axi_rvalid ? s4_axi_rdata :
                          default_rvalid_q ? 32'b0 :
                          32'h0;
 
@@ -363,11 +408,12 @@ module axi_interconnect (
                          s1_axi_rvalid ? s1_axi_rresp :
                          s2_axi_rvalid ? s2_axi_rresp :
                          s3_axi_rvalid ? s3_axi_rresp :
+                         s4_axi_rvalid ? s4_axi_rresp :
                          default_rvalid_q ? 2'b11 :
                          2'b00;
 
     assign m_axi_rvalid = s0_axi_rvalid | s1_axi_rvalid | s2_axi_rvalid | s3_axi_rvalid |
-                         
+                          s4_axi_rvalid |
                           default_rvalid_q;
 
 endmodule
