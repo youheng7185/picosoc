@@ -1,0 +1,5 @@
+vivado_proj/
+waveform.vcd
+obj_dir_picosoc/
+obj_dir_axil_ram/
+software/output/
