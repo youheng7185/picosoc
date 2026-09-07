@@ -37,10 +37,7 @@ int main(int argc, char **argv) {
     dut->trace(tfp, 99);
     tfp->open("waveform.vcd");
 
-    // dut->rst_n = 0;
-
     delay(dut, tfp, 10);
-    // dut->rst_n = 1;
     dut->uart_rx_i = 1;
     delay(dut, tfp, 50000);
 

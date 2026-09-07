@@ -14,7 +14,7 @@ MEM2 = $(OUTPUT_DIR)/$(TARGET)_b2.mem
 MEM3 = $(OUTPUT_DIR)/$(TARGET)_b3.mem
 
 # Automatically include all C and assembly source files
-SRCS = $(wildcard *.c) $(wildcard *.s)
+SRCS = start.s main.c firmware.c
 
 all: $(ELF) $(BIN) $(HEX) $(MEM0) $(MEM1) $(MEM2) $(MEM3)
 
