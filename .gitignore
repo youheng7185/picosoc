@@ -4,3 +4,6 @@ obj_dir_picosoc/
 obj_dir_axil_ram/
 software/output/
 rtl/axi_interconnect/a.out
+rtl/axi_qspi_nor/obj_dir_qspi_nor/
+rtl/axi_qspi_nor/obj_dir_axi_qspi_nor/
+rtl/axi_qspi_nor/waveform.vcd

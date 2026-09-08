@@ -6,8 +6,19 @@ module picosoc (
 //    output wire [15:0] gpio_out,
 
     input  wire uart_rx_i,
-    output wire uart_tx_o
+    output wire uart_tx_o,
+
+    output wire cs_n_o,
+    output wire mosi_o,
+    input wire miso_i,
+    output wire spi_clk_o,
+    
+    output wire led
 );
+    blink_led led_inst (
+        .clk(clk_i),
+        .led(led)
+    );
     // assign rst_n = 1'b1;
     reg rst_n;
     reg [6:0] reset_counter;
@@ -58,6 +69,46 @@ module picosoc (
 (* mark_debug = "true" *) wire        mem_axi_rready;
 (* mark_debug = "true" *) wire [31:0] mem_axi_rdata;
     wire [1:0]  mem_axi_rresp;
+    
+ila_0 u_ila (
+    .clk    (clk_i),
+
+    // AXI Write Address
+    .probe0 ({
+        mem_axi_awvalid,
+        mem_axi_awready,
+        mem_axi_awaddr
+    }),
+
+    // AXI Write Data
+    .probe1 ({
+        mem_axi_wvalid,
+        mem_axi_wready,
+        mem_axi_wdata,
+        mem_axi_wstrb
+    }),
+
+    // AXI Write Response
+    .probe2 ({
+        mem_axi_bvalid,
+        mem_axi_bready,
+        mem_axi_bresp
+    }),
+
+    // AXI Read Address
+    .probe3 ({
+        mem_axi_arvalid,
+        mem_axi_arready,
+        mem_axi_araddr
+    }),
+
+    // AXI Read Data
+    .probe4 ({
+        mem_axi_rvalid,
+        mem_axi_rready,
+        mem_axi_rdata
+    })
+);
 
     // =========================================================
     // Interconnect -> Slave 0: INSTR_MEM (axil_rom)
@@ -144,7 +195,7 @@ module picosoc (
     wire        s3_axi_rready;
 
     // =====================================================
-    // Slave 3: fifo loopback
+    // Slave 4: fifo loopback
     // =====================================================
     wire [31:0] s4_axi_awaddr;
     wire        s4_axi_awvalid;
@@ -163,6 +214,27 @@ module picosoc (
     wire [1:0]  s4_axi_rresp;
     wire        s4_axi_rvalid;
     wire        s4_axi_rready;    
+
+    // =====================================================
+    // Slave 5: qspi
+    // =====================================================
+    wire [31:0] s5_axi_awaddr;
+    wire        s5_axi_awvalid;
+    wire        s5_axi_awready;
+    wire [31:0] s5_axi_wdata;
+    wire [3:0]  s5_axi_wstrb;
+    wire        s5_axi_wvalid;
+    wire        s5_axi_wready;
+    wire [1:0]  s5_axi_bresp;
+    wire        s5_axi_bvalid;
+    wire        s5_axi_bready;
+    wire [31:0] s5_axi_araddr;
+    wire        s5_axi_arvalid;
+    wire        s5_axi_arready;
+    wire [31:0] s5_axi_rdata;
+    wire [1:0]  s5_axi_rresp;
+    wire        s5_axi_rvalid;
+    wire        s5_axi_rready;      
 
     // PCPI (tied off — no co-processor)
     wire        pcpi_valid;
@@ -367,7 +439,25 @@ module picosoc (
         .s4_axi_rdata   (s4_axi_rdata),
         .s4_axi_rresp   (s4_axi_rresp),
         .s4_axi_rvalid  (s4_axi_rvalid),
-        .s4_axi_rready  (s4_axi_rready)        
+        .s4_axi_rready  (s4_axi_rready),
+        
+        .s5_axi_awaddr  (s5_axi_awaddr),
+        .s5_axi_awvalid (s5_axi_awvalid),
+        .s5_axi_awready (s5_axi_awready),
+        .s5_axi_wdata   (s5_axi_wdata),
+        .s5_axi_wstrb   (s5_axi_wstrb),
+        .s5_axi_wvalid  (s5_axi_wvalid),
+        .s5_axi_wready  (s5_axi_wready),
+        .s5_axi_bresp   (s5_axi_bresp),
+        .s5_axi_bvalid  (s5_axi_bvalid),
+        .s5_axi_bready  (s5_axi_bready),
+        .s5_axi_araddr  (s5_axi_araddr),
+        .s5_axi_arvalid (s5_axi_arvalid),
+        .s5_axi_arready (s5_axi_arready),
+        .s5_axi_rdata   (s5_axi_rdata),
+        .s5_axi_rresp   (s5_axi_rresp),
+        .s5_axi_rvalid  (s5_axi_rvalid),
+        .s5_axi_rready  (s5_axi_rready)          
     );
 
     // =========================================================
@@ -538,6 +628,43 @@ module picosoc (
         .S_AXI_RREADY  (s4_axi_rready),
         .S_AXI_RDATA   (s4_axi_rdata),
         .S_AXI_RRESP   (s4_axi_rresp)
+    );
+
+    axi_qspi_nor_xilinx #(
+        .C_AXI_ADDR_WIDTH(6)
+    ) u_qspi_nor (
+        .S_AXI_ACLK    (clk_i),
+        .S_AXI_ARESETN (rst_n),
+
+        .S_AXI_AWVALID (s5_axi_awvalid),
+        .S_AXI_AWREADY (s5_axi_awready),
+        .S_AXI_AWADDR  (s5_axi_awaddr[5:0]),
+        .S_AXI_AWPROT  (3'b0),
+
+        .S_AXI_WVALID  (s5_axi_wvalid),
+        .S_AXI_WREADY  (s5_axi_wready),
+        .S_AXI_WDATA   (s5_axi_wdata),
+        .S_AXI_WSTRB   (s5_axi_wstrb),
+
+        .S_AXI_BVALID  (s5_axi_bvalid),
+        .S_AXI_BREADY  (s5_axi_bready),
+        .S_AXI_BRESP   (s5_axi_bresp),
+
+        .S_AXI_ARVALID (s5_axi_arvalid),
+        .S_AXI_ARREADY (s5_axi_arready),
+        .S_AXI_ARADDR  (s5_axi_araddr[5:0]),
+        .S_AXI_ARPROT  (3'b0),
+
+        .S_AXI_RVALID  (s5_axi_rvalid),
+        .S_AXI_RREADY  (s5_axi_rready),
+        .S_AXI_RDATA   (s5_axi_rdata),
+        .S_AXI_RRESP   (s5_axi_rresp),
+
+        // QSPI physical pins — connect to top-level ports or IOBUF
+        .cs_n_o   (cs_n_o),
+        .miso_i   (miso_i),
+        .mosi_o   (mosi_o),
+        .spi_clk_o(spi_clk_o)
     );
 
 endmodule

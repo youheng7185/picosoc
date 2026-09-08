@@ -117,17 +117,11 @@ module	axil_rom #(
     (* ram_style = "block" *)
     reg [7:0] ram3 [0:RAM_WORDS-1];
 
-//	initial begin
-//		$readmemh("software/output/firmware_b0.mem", ram0);
-//		$readmemh("software/output/firmware_b1.mem", ram1);
-//		$readmemh("software/output/firmware_b2.mem", ram2);
-//		$readmemh("software/output/firmware_b3.mem", ram3);
-//	end
 	initial begin
-		$readmemh("firmware_b0.mem", ram0);
-		$readmemh("firmware_b1.mem", ram1);
-		$readmemh("firmware_b2.mem", ram2);
-		$readmemh("firmware_b3.mem", ram3);
+		$readmemh("software/output/firmware_b0.mem", ram0);
+		$readmemh("software/output/firmware_b1.mem", ram1);
+		$readmemh("software/output/firmware_b2.mem", ram2);
+		$readmemh("software/output/firmware_b3.mem", ram3);
 	end
 
 	// }}}
