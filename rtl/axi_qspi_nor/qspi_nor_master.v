@@ -312,7 +312,7 @@ module qspi_nor_master (
 
                     SEND_DUMMY: begin
                         if (counter_clk_fall == 8'd0) begin
-                            state <= READ_DATA;
+                            state <= READ_DATA_PRE;
                             counter_clk_fall <= 8'd7;
                         end else begin
                             counter_clk_fall <= counter_clk_fall - 1;

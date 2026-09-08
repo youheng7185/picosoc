@@ -15,10 +15,10 @@ module picosoc (
     
     output wire led
 );
-    blink_led led_inst (
-        .clk(clk_i),
-        .led(led)
-    );
+//     blink_led led_inst (
+//         .clk(clk_i),
+//         .led(led)
+//     );
     // assign rst_n = 1'b1;
     reg rst_n;
     reg [6:0] reset_counter;
@@ -70,45 +70,45 @@ module picosoc (
 (* mark_debug = "true" *) wire [31:0] mem_axi_rdata;
     wire [1:0]  mem_axi_rresp;
     
-ila_0 u_ila (
-    .clk    (clk_i),
+    // ila_0 u_ila (
+    //     .clk    (clk_i),
 
-    // AXI Write Address
-    .probe0 ({
-        mem_axi_awvalid,
-        mem_axi_awready,
-        mem_axi_awaddr
-    }),
+    //     // AXI Write Address
+    //     .probe0 ({
+    //         mem_axi_awvalid,
+    //         mem_axi_awready,
+    //         mem_axi_awaddr
+    //     }),
 
-    // AXI Write Data
-    .probe1 ({
-        mem_axi_wvalid,
-        mem_axi_wready,
-        mem_axi_wdata,
-        mem_axi_wstrb
-    }),
+    //     // AXI Write Data
+    //     .probe1 ({
+    //         mem_axi_wvalid,
+    //         mem_axi_wready,
+    //         mem_axi_wdata,
+    //         mem_axi_wstrb
+    //     }),
 
-    // AXI Write Response
-    .probe2 ({
-        mem_axi_bvalid,
-        mem_axi_bready,
-        mem_axi_bresp
-    }),
+    //     // AXI Write Response
+    //     .probe2 ({
+    //         mem_axi_bvalid,
+    //         mem_axi_bready,
+    //         mem_axi_bresp
+    //     }),
 
-    // AXI Read Address
-    .probe3 ({
-        mem_axi_arvalid,
-        mem_axi_arready,
-        mem_axi_araddr
-    }),
+    //     // AXI Read Address
+    //     .probe3 ({
+    //         mem_axi_arvalid,
+    //         mem_axi_arready,
+    //         mem_axi_araddr
+    //     }),
 
-    // AXI Read Data
-    .probe4 ({
-        mem_axi_rvalid,
-        mem_axi_rready,
-        mem_axi_rdata
-    })
-);
+    //     // AXI Read Data
+    //     .probe4 ({
+    //         mem_axi_rvalid,
+    //         mem_axi_rready,
+    //         mem_axi_rdata
+    //     })
+    // );
 
     // =========================================================
     // Interconnect -> Slave 0: INSTR_MEM (axil_rom)

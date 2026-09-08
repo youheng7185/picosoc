@@ -41,7 +41,7 @@ picosoc_SRC = rtl/picosoc.v \
 				rtl/axi_gpio/axi_gpio.v \
 				rtl/axi_interconnect/axi_interconnect.v \
 				rtl/axil_block_ram/axil_ram.v \
-				rtl/axil_block_ram/axil_rom.v \
+				rtl/axil_block_ram/axil_rom_verilator.v \
 				rtl/axi_uart/axi_uart.v \
 				rtl/axi_uart/uart_rx.v \
 				rtl/axi_uart/uart_tx.v \
