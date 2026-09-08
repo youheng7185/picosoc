@@ -164,7 +164,7 @@ module axi_qspi_nor #(
             fifo_rd_en_r    <= 1'b0;
             fifo_rd_pending <= fifo_rd_en_r;
 
-            if (axil_read_ready && (arskd_addr == ADDR_DATA) && !tx_fifo_empty) begin
+            if (axil_read_ready && (arskd_addr == ADDR_DATA)) begin
                 fifo_rd_en_r          <= 1'b1;
                 fifo_read_in_progress <= 1'b1;
             end

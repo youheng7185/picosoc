@@ -230,7 +230,7 @@ module qspi_nor_master (
                     end
 
                     READ_DATA: begin
-                        read_data_reg_for_fifo_input[counter_clk_rise[4:0]] <= miso_i;
+                        read_data_reg_for_fifo_input[counter_clk_rise[4:0] + (counter_data_flow[1:0] << 3)] <= miso_i;
                         
                         if (counter_clk_rise == 8'd0) begin
                             counter_clk_rise <= 8'd7;
@@ -361,7 +361,7 @@ module qspi_nor_master (
                         if (counter_clk_fall == 8'd0) begin
                             counter_clk_fall <= 8'd7;
                             counter_data_flow <= counter_data_flow + 1;
-                            read_data_reg_for_fifo_input <= {read_data_reg_for_fifo_input[23:0], 8'b0};
+                            // read_data_reg_for_fifo_input <= {read_data_reg_for_fifo_input[23:0], 8'b0};
 
                             if (counter_data_flow == data_cnt_i) begin
                                 state <= PULL_DOWN_CS_BEFORE_DONE;
