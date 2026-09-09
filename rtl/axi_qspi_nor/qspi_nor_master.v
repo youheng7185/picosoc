@@ -27,12 +27,14 @@ module qspi_nor_master (
     output wire [31:0] tx_fifo_data_dout,
     output wire tx_fifo_data_full,
     output wire tx_fifo_data_empty,
+    input wire tx_fifo_flush,
 
     // rx from master
     input wire rx_fifo_data_wr_en,
     input wire [31:0] rx_fifo_data_din,
     output wire rx_fifo_data_full,
-    output wire rx_fifo_data_empty
+    output wire rx_fifo_data_empty,
+    input wire rx_fifo_flush
 );
 
     // parameter DIV = 10; // input 50mhz, output 2.5mhz
@@ -82,7 +84,8 @@ module qspi_nor_master (
         .din(fifo_data_wr),
         .dout(tx_fifo_data_dout),
         .full_o(tx_fifo_data_full),
-        .empty_o(tx_fifo_data_empty)
+        .empty_o(tx_fifo_data_empty),
+        .flush_i(tx_fifo_flush)
     );
     
     wire fifo_data_rd_en;
@@ -97,7 +100,8 @@ module qspi_nor_master (
         .din(rx_fifo_data_din),
         .dout(fifo_data_rd),
         .full_o(rx_fifo_data_full),
-        .empty_o(rx_fifo_data_empty)
+        .empty_o(rx_fifo_data_empty),
+        .flush_i(rx_fifo_flush)
     );
 
     reg clk_out_en;

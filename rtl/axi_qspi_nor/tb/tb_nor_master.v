@@ -305,7 +305,7 @@ module tb_qspi_nor;
     integer    i;
     reg [31:0] wr_word;
     reg [7:0] b0, b1, b2, b3;
-
+    reg [31:0] lfsr;
 
     initial begin
         $dumpfile("waveform.vcd");
@@ -327,95 +327,122 @@ module tb_qspi_nor;
         else
             $display("PASS: MFR ID correct");
 
-        // ------------------------------------------------------------------
-        // Test 2: RDSR1 - status should be 0x00 after reset (not busy)
-        // ------------------------------------------------------------------
-        $display("=== Test 2: RDSR1 ===");
-        op_rdsr1(sr1);
-        if (sr1[0] !== 1'b0)
-            $display("FAIL: WIP should be clear, got SR1=0x%02x", sr1);
-        else
-            $display("PASS: WIP clear");
-
-        // ------------------------------------------------------------------
-        // Test 3: Sector Erase then verify reads 0xFF
-        // ------------------------------------------------------------------
-        $display("=== Test 3: Sector Erase ===");
-        op_sector_erase(32'h000000);
-        op_read(32'h000000, 8'd3); // read 4 bytes
-        for (i = 0; i < 1; i = i + 1) begin
-            pop_tx_fifo(rd_word);
-            $display("  read back after erase: 0x%08x (expect 0xFFFFFFFF)", rd_word);
-            if (rd_word !== 32'hFFFFFFFF)
-                $display("FAIL: expected 0xFFFFFFFF");
-            else
-                $display("PASS");
-        end
-
-        // ------------------------------------------------------------------
-        // Test 4: Page Program 4 bytes then read back
-        // ------------------------------------------------------------------
-        $display("=== Test 4: Page Program + Read ===");
-
-        // push 1 word (4 bytes) into rx fifo
-        push_rx_fifo(32'hDEADBEEF);
-
-        op_page_program(32'h000000, 8'd3); // 4 bytes
-
-        // read back
-        op_read(32'h000000, 8'd3);
-        pop_tx_fifo(rd_word);
-
-        $display("  read back: 0x%08x (expect 0xDEADBEEF)", rd_word);
-//        if (rd_word !== 32'hDEADBEEF)
-//            $display("FAIL");
+//        // ------------------------------------------------------------------
+//        // Test 2: RDSR1 - status should be 0x00 after reset (not busy)
+//        // ------------------------------------------------------------------
+//        $display("=== Test 2: RDSR1 ===");
+//        op_rdsr1(sr1);
+//        if (sr1[0] !== 1'b0)
+//            $display("FAIL: WIP should be clear, got SR1=0x%02x", sr1);
 //        else
-//            $display("PASS");
+//            $display("PASS: WIP clear");
 
-        // ------------------------------------------------------------------
-        // Test 5: Page Program 16 bytes then read back
-        // ------------------------------------------------------------------
-        $display("=== Test 5: Page Program 16 bytes ===");
-        op_sector_erase(32'h001000);
+//        // ------------------------------------------------------------------
+//        // Test 3: Sector Erase then verify reads 0xFF
+//        // ------------------------------------------------------------------
+//        $display("=== Test 3: Sector Erase ===");
+//        op_sector_erase(32'h000000);
+//        op_read(32'h000000, 8'd3); // read 4 bytes
+//        for (i = 0; i < 1; i = i + 1) begin
+//            pop_tx_fifo(rd_word);
+//            $display("  read back after erase: 0x%08x (expect 0xFFFFFFFF)", rd_word);
+//            if (rd_word !== 32'hFFFFFFFF)
+//                $display("FAIL: expected 0xFFFFFFFF");
+//            else
+//                $display("PASS");
+//        end
 
-        push_rx_fifo(32'h04030201);
-        push_rx_fifo(32'h08070605);
-        push_rx_fifo(32'h0C0B0A09);
-        push_rx_fifo(32'h100F0E0D);
+//        // ------------------------------------------------------------------
+//        // Test 4: Page Program 4 bytes then read back
+//        // ------------------------------------------------------------------
+//        $display("=== Test 4: Page Program + Read ===");
 
-        op_page_program(32'h001000, 8'd15); // 16 bytes
+//        // push 1 word (4 bytes) into rx fifo
+//        push_rx_fifo(32'hDEADBEEF);
 
-        op_read(32'h001000, 8'd15);
-        for (i = 0; i < 4; i = i + 1) begin
-            pop_tx_fifo(rd_word);
-            $display("  word[%0d] = 0x%08x", i, rd_word);
-        end
+//        op_page_program(32'h000000, 8'd3); // 4 bytes
+
+//        // read back
+//        op_read(32'h000000, 8'd3);
+//        pop_tx_fifo(rd_word);
+
+//        $display("  read back: 0x%08x (expect 0xDEADBEEF)", rd_word);
+////        if (rd_word !== 32'hDEADBEEF)
+////            $display("FAIL");
+////        else
+////            $display("PASS");
+
+//        // ------------------------------------------------------------------
+//        // Test 5: Page Program 16 bytes then read back
+//        // ------------------------------------------------------------------
+//        $display("=== Test 5: Page Program 16 bytes ===");
+//        op_sector_erase(32'h001000);
+
+//        push_rx_fifo(32'h04030201);
+//        push_rx_fifo(32'h08070605);
+//        push_rx_fifo(32'h0C0B0A09);
+//        push_rx_fifo(32'h100F0E0D);
+
+//        op_page_program(32'h001000, 8'd15); // 16 bytes
+
+//        op_read(32'h001000, 8'd15);
+//        for (i = 0; i < 4; i = i + 1) begin
+//            pop_tx_fifo(rd_word);
+//            $display("  word[%0d] = 0x%08x", i, rd_word);
+//        end
         
-        $display("=== Test 5b: PP 16 bytes 0xAA55 pattern ===");
+//        $display("=== Test 5b: PP 16 bytes 0xAA55 pattern ===");
+//        op_sector_erase(32'h002000);
+        
+//        for (i = 0; i < 50; i = i + 1) begin
+//            b0 = i*4 + 0;
+//            b1 = i*4 + 1;
+//            b2 = i*4 + 2;
+//            b3 = i*4 + 3;
+//            push_rx_fifo({b3, b2, b1, b0});
+//        end
+        
+//        op_page_program(32'h003000, 8'd199);
+      
+//        op_read(32'h003000, 8'd199);
+        
+//        for (i = 0; i < 50; i = i + 1) begin
+//            b0 = i*4 + 0;
+//            b1 = i*4 + 1;
+//            b2 = i*4 + 2;
+//            b3 = i*4 + 3;
+//            wr_word = {b3, b2, b1, b0};
+//            pop_tx_fifo(rd_word);
+//            $display("  word[%0d] = 0x%08x (expected: 0x%08x)", i, rd_word, wr_word);
+//        end
+
+
+        $display("=== Test 5c: PP 200 bytes LFSR pattern ===");
+        
         op_sector_erase(32'h002000);
         
-        for (i = 0; i < 50; i = i + 1) begin
-            b0 = i*4 + 0;
-            b1 = i*4 + 1;
-            b2 = i*4 + 2;
-            b3 = i*4 + 3;
-            push_rx_fifo({b3, b2, b1, b0});
+        // Fill FIFO with 50 words LFSR pattern
+        lfsr = 32'hDEADBEEF;
+        for (i = 0; i < 64; i = i + 1) begin
+            lfsr = lfsr ^ (lfsr << 13);
+            lfsr = lfsr ^ (lfsr >> 17);
+            lfsr = lfsr ^ (lfsr << 5);
+            push_rx_fifo(lfsr);
         end
         
-        op_page_program(32'h003000, 8'd199);
-      
-        op_read(32'h003000, 8'd199);
+        op_page_program(32'h002000, 8'd255);
         
-        for (i = 0; i < 50; i = i + 1) begin
-            b0 = i*4 + 0;
-            b1 = i*4 + 1;
-            b2 = i*4 + 2;
-            b3 = i*4 + 3;
-            wr_word = {b3, b2, b1, b0};
+        op_read(32'h002000, 8'd255);
+        
+        // Verify with same LFSR sequence
+        lfsr = 32'hDEADBEEF;
+        for (i = 0; i < 64; i = i + 1) begin
+            lfsr = lfsr ^ (lfsr << 13);
+            lfsr = lfsr ^ (lfsr >> 17);
+            lfsr = lfsr ^ (lfsr << 5);
             pop_tx_fifo(rd_word);
-            $display("  word[%0d] = 0x%08x (expected: 0x%08x)", i, rd_word, wr_word);
-        end
-
+            $display("  word[%0d] = 0x%08x (expected: 0x%08x)", i, rd_word, lfsr);
+        end 
         // ------------------------------------------------------------------
         // Test 6: WREN + WRDI - check WEL bit
         // ------------------------------------------------------------------

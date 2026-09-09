@@ -44,7 +44,8 @@ module axi_qspi_nor #(
     // -------------------------------------------------------------------------
     // Register addresses (word-addressed, drop bottom 2 bits)
     // 0x00  CTRL      start[0], data_dir[1], has_address[2],
-    //                 data_mode[4:3], dummy_cnt[9:5]
+    //                 data_mode[4:3], dummy_cnt[9:5],
+    //                 tx_fifo_flush[10], rx_fifo_flush[11]
     // 0x04  STATUS    done[0], tx_fifo_empty[1], tx_fifo_full[2],
     //                 rx_fifo_empty[3], rx_fifo_full[4]
     // 0x08  INSTR     instr[7:0]
@@ -233,6 +234,7 @@ module axi_qspi_nor #(
     reg [7:0]  reg_instr;
     reg [31:0] reg_addr;
     reg [7:0]  reg_data_cnt;
+    reg [1:0] reg_fifo_flush;
 
     wire nor_done;
 
@@ -254,8 +256,10 @@ module axi_qspi_nor #(
             reg_data_cnt    <= 8'd0;
             rx_fifo_wr_en   <= 1'b0;
             rx_fifo_din     <= 32'd0;
+            reg_fifo_flush <= 2'b00;
         end else begin
             rx_fifo_wr_en <= 1'b0; // self-clear
+            reg_fifo_flush <= 2'b00;
 
             if (axil_write_ready) begin
                 case (awskd_addr)
@@ -271,6 +275,7 @@ module axi_qspi_nor #(
                         reg_has_address <= wskd_data[2];
                         reg_data_mode   <= wskd_data[4:3];
                         reg_dummy_cnt   <= wskd_data[9:5];
+                        reg_fifo_flush <= wskd_data[11:10];
                     end
                     ADDR_INSTR:    reg_instr    <= wskd_data[7:0];
                     ADDR_ADDR:     reg_addr     <= wskd_data;
@@ -335,7 +340,10 @@ module axi_qspi_nor #(
         .rx_fifo_data_wr_en (rx_fifo_wr_en),
         .rx_fifo_data_din   (rx_fifo_din),
         .rx_fifo_data_full  (rx_fifo_full),
-        .rx_fifo_data_empty (rx_fifo_empty)
+        .rx_fifo_data_empty (rx_fifo_empty),
+
+        .tx_fifo_flush  (reg_fifo_flush[0]),
+        .rx_fifo_flush  (reg_fifo_flush[1])
     );
 
     // -------------------------------------------------------------------------
