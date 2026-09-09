@@ -13,7 +13,10 @@ module picosoc (
     input wire miso_i,
     output wire spi_clk_o,
     
-    output wire led
+    output wire led,
+
+    output wire mdc_o,
+    inout  wire mdio
 );
 //     blink_led led_inst (
 //         .clk(clk_i),
@@ -236,6 +239,27 @@ module picosoc (
     wire        s5_axi_rvalid;
     wire        s5_axi_rready;      
 
+    // =====================================================
+    // Slave 5: qspi
+    // =====================================================
+    wire [31:0] s6_axi_awaddr;
+    wire        s6_axi_awvalid;
+    wire        s6_axi_awready;
+    wire [31:0] s6_axi_wdata;
+    wire [3:0]  s6_axi_wstrb;
+    wire        s6_axi_wvalid;
+    wire        s6_axi_wready;
+    wire [1:0]  s6_axi_bresp;
+    wire        s6_axi_bvalid;
+    wire        s6_axi_bready;
+    wire [31:0] s6_axi_araddr;
+    wire        s6_axi_arvalid;
+    wire        s6_axi_arready;
+    wire [31:0] s6_axi_rdata;
+    wire [1:0]  s6_axi_rresp;
+    wire        s6_axi_rvalid;
+    wire        s6_axi_rready;  
+
     // PCPI (tied off — no co-processor)
     wire        pcpi_valid;
     wire [31:0] pcpi_insn;
@@ -457,7 +481,25 @@ module picosoc (
         .s5_axi_rdata   (s5_axi_rdata),
         .s5_axi_rresp   (s5_axi_rresp),
         .s5_axi_rvalid  (s5_axi_rvalid),
-        .s5_axi_rready  (s5_axi_rready)          
+        .s5_axi_rready  (s5_axi_rready),
+        
+        .s6_axi_awaddr  (s6_axi_awaddr),
+        .s6_axi_awvalid (s6_axi_awvalid),
+        .s6_axi_awready (s6_axi_awready),
+        .s6_axi_wdata   (s6_axi_wdata),
+        .s6_axi_wstrb   (s6_axi_wstrb),
+        .s6_axi_wvalid  (s6_axi_wvalid),
+        .s6_axi_wready  (s6_axi_wready),
+        .s6_axi_bresp   (s6_axi_bresp),
+        .s6_axi_bvalid  (s6_axi_bvalid),
+        .s6_axi_bready  (s6_axi_bready),
+        .s6_axi_araddr  (s6_axi_araddr),
+        .s6_axi_arvalid (s6_axi_arvalid),
+        .s6_axi_arready (s6_axi_arready),
+        .s6_axi_rdata   (s6_axi_rdata),
+        .s6_axi_rresp   (s6_axi_rresp),
+        .s6_axi_rvalid  (s6_axi_rvalid),
+        .s6_axi_rready  (s6_axi_rready)  
     );
 
     // =========================================================
@@ -665,6 +707,38 @@ module picosoc (
         .miso_i   (miso_i),
         .mosi_o   (mosi_o),
         .spi_clk_o(spi_clk_o)
+    );
+
+    axi_mdio_vivado #(
+        .C_AXI_ADDR_WIDTH(4)
+    ) u_mdio (
+        .S_AXI_ACLK    (clk_i),
+        .S_AXI_ARESETN (rst_n),
+
+        .S_AXI_AWVALID (s6_axi_awvalid),
+        .S_AXI_AWREADY (s6_axi_awready),
+        .S_AXI_AWADDR  (s6_axi_awaddr[3:0]),
+
+        .S_AXI_WVALID  (s6_axi_wvalid),
+        .S_AXI_WREADY  (s6_axi_wready),
+        .S_AXI_WDATA   (s6_axi_wdata),
+        .S_AXI_WSTRB   (s6_axi_wstrb),
+
+        .S_AXI_BVALID  (s6_axi_bvalid),
+        .S_AXI_BREADY  (s6_axi_bready),
+        .S_AXI_BRESP   (s6_axi_bresp),
+
+        .S_AXI_ARVALID (s6_axi_arvalid),
+        .S_AXI_ARREADY (s6_axi_arready),
+        .S_AXI_ARADDR  (s6_axi_araddr[3:0]),
+
+        .S_AXI_RVALID  (s6_axi_rvalid),
+        .S_AXI_RREADY  (s6_axi_rready),
+        .S_AXI_RDATA   (s6_axi_rdata),
+        .S_AXI_RRESP   (s6_axi_rresp),
+
+        .mdc_o (mdc_o),
+        .mdio  (mdio)
     );
 
 endmodule

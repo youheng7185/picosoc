@@ -536,7 +536,7 @@ int main(void)
     add_peripheral_io("UART0",     0x80000100);
     add_peripheral_io("FIFO",      0x80000200);
     add_peripheral_io("QSPI",      0x80000300);
-    // add_peripheral_io("I2C",       0x80000400);
+    add_peripheral_io("MDIO",       0x80000400);
     // add_peripheral_io("QSPI",      0x80000500);
 
     /* 4-KiB window example (CNN accelerator register bank) */

@@ -7,3 +7,6 @@ rtl/axi_interconnect/a.out
 rtl/axi_qspi_nor/obj_dir_qspi_nor/
 rtl/axi_qspi_nor/obj_dir_axi_qspi_nor/
 rtl/axi_qspi_nor/waveform.vcd
+rtl/axi_mdio/obj_dir_mdio
+rtl/axi_mdio/obj_dir_axi_mdio
+rtl/axi_mdio/waveform.vcd
