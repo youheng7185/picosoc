@@ -129,7 +129,12 @@ module qspi_nor_master (
             case (fifo_state)
                 FIFO_IDLE: begin
                     if (fifo_rd_req_set) begin
-                        fifo_state <= FIFO_RECEIVE_FETCH_SIGNAL;
+                        if (counter_data_flow == (data_cnt_i - 4)) begin
+                            fifo_state <= FIFO_WRITE_INTO_DATA_TO_WRITE;
+                            $display("run until here");
+                        end else begin
+                            fifo_state <= FIFO_RECEIVE_FETCH_SIGNAL;
+                        end
                     end
                 end
 
@@ -333,14 +338,20 @@ module qspi_nor_master (
                             end else begin
                                 // fetch another cycle of fifo
                                 if (counter_data_flow[1:0] == 2'b11) begin
-                                    if (!rx_fifo_data_empty) begin
+                                    // if (!rx_fifo_data_empty) begin
+                                    if (1'b1) begin
                                         counter_clk_fall <= 8'd7;
                                         counter_data_flow <= counter_data_flow + 1;
-                                        fifo_rd_req_set <= 1'b1;
+                                        if (counter_data_flow == (data_cnt_i - 4)) begin
+                                            fifo_rd_req_set <= 1'b0;
+                                            // dont request anymore, just latch into data_to_write for the last four bytes
+                                        end else begin
+                                            fifo_rd_req_set <= 1'b1;
+                                        end
                                         clk_out_en <= 1'b1;
                                     end else begin
-                                        clk_out_en <= 1'b0;
-                                        $display("fifo is empty, please fill up from master");
+                                        // clk_out_en <= 1'b0;
+                                        // $display("fifo is empty, please fill up from master");
                                     end
                                 end else begin
                                         fifo_rd_req_set <= 1'b0;
