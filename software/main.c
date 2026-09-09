@@ -342,11 +342,12 @@ static void page_program(uint32_t addr, uint32_t pattern_base) {
     // Fill TX FIFO with 256 bytes of pattern
     uint32_t i;
     for (i = 0; i < 256; i += 4) {
-        uint32_t b = pattern_base + i;
-        qspi[REG_DATA] = ((b + 0) <<  0) |
-                         ((b + 1) <<  8) |
-                         ((b + 2) << 16) |
-                         ((b + 3) << 24);
+        // uint32_t b = pattern_base + i;
+        // qspi[REG_DATA] = ((b + 0) <<  0) |
+        //                  ((b + 1) <<  8) |
+        //                  ((b + 2) << 16) |
+        //                  ((b + 3) << 24);
+        qspi[REG_DATA] = 0xFF0000FF;
     }
 
     qspi[REG_INSTR]    = 0x02;  // Page Program
@@ -392,6 +393,59 @@ static int verify_page(uint32_t addr, uint32_t pattern_base) {
     return pass;
 }
 
+static void page_program_lfsr(uint32_t addr, uint32_t pattern_base) {
+    write_enable();
+
+    static uint32_t lfsr = 0xDEADBEEF;
+    uint32_t i;
+    for (i = 0; i < 256; i += 4) {
+        lfsr ^= lfsr << 13;
+        lfsr ^= lfsr >> 17;
+        lfsr ^= lfsr << 5;
+        qspi[REG_DATA] = lfsr;
+    }
+
+    qspi[REG_INSTR]    = 0x02;
+    qspi[REG_ADDR]     = addr;
+    qspi[REG_DATA_CNT] = 255;
+    qspi[REG_CTRL] = CTRL_START | CTRL_DATA_DIR | CTRL_HAS_ADDR | CTRL_DATA_MODE;
+    wait_done();
+    wait_flash_ready();
+}
+
+static int verify_page_lfsr(uint32_t addr, uint32_t pattern_base) {
+    qspi[REG_CTRL] = (1 << 10);  // flush tx fifo
+    qspi[REG_CTRL] = 0x00;
+
+    qspi[REG_INSTR]    = 0x03;
+    qspi[REG_ADDR]     = addr;
+    qspi[REG_DATA_CNT] = 255;
+    qspi[REG_CTRL]     = CTRL_START | CTRL_HAS_ADDR | CTRL_DATA_MODE;
+    wait_done();
+
+    static uint32_t lfsr = 0xDEADBEEF;
+    uint32_t i;
+    int pass = 1;
+    for (i = 0; i < 64; i++) {
+        lfsr ^= lfsr << 13;
+        lfsr ^= lfsr >> 17;
+        lfsr ^= lfsr << 5;
+
+        uint32_t got = qspi[REG_DATA];
+        if (got != lfsr) {
+            pass = 0;
+            print("FAIL at addr 0x");
+            print_hex(addr + i * 4, 8);
+            print(" got 0x");
+            print_hex(got, 8);
+            print(" expected 0x");
+            print_hex(lfsr, 8);
+            print("\r\n");
+        }
+    }
+    return pass;
+}
+
 int main() {
     volatile unsigned int *gpio = (volatile unsigned int *)0x80000000;
     gpio[1] = 0x0000ABCD;
@@ -421,80 +475,85 @@ int main() {
     print_hex(qspi[REG_DATA], 8);
     print("\r\n");
 
-    // =========================================================
-    // PHASE 1: Erase all sectors
-    // =========================================================
-    print("Erasing entire 8MB flash...\r\n");
+    sector_erase(0x00000000);
+    page_program_lfsr(0x000000, 0);
+    verify_page_lfsr(0x000000, 0);
 
-    uint32_t sector;
-    for (sector = 0; sector < NUM_SECTORS; sector++) {
-        uint32_t addr = sector * SECTOR_SIZE;
-        sector_erase(addr);
+    while(1);
+    // // =========================================================
+    // // PHASE 1: Erase all sectors
+    // // =========================================================
+    // print("Erasing entire 8MB flash...\r\n");
 
-        if ((sector & 0xF) == 0xF) {
-            print("Erased sector ");
-            print_dec(sector + 1);
-            print(" / ");
-            print_dec(NUM_SECTORS);
-            print("\r\n");
-        }
-    }
+    // uint32_t sector;
+    // for (sector = 0; sector < NUM_SECTORS; sector++) {
+    //     uint32_t addr = sector * SECTOR_SIZE;
+    //     sector_erase(addr);
 
-    print("Erase complete\r\n");
+    //     if ((sector & 0xF) == 0xF) {
+    //         print("Erased sector ");
+    //         print_dec(sector + 1);
+    //         print(" / ");
+    //         print_dec(NUM_SECTORS);
+    //         print("\r\n");
+    //     }
+    // }
 
-    // =========================================================
-    // PHASE 2: Write all pages
-    // =========================================================
-    print("Writing all pages...\r\n");
+    // print("Erase complete\r\n");
 
-    uint32_t page;
-    for (page = 0; page < NUM_PAGES; page++) {
-        uint32_t addr         = page * PAGE_SIZE;
-        uint32_t pattern_base = addr & 0xFF; // byte offset wraps at 256
+    // // =========================================================
+    // // PHASE 2: Write all pages
+    // // =========================================================
+    // print("Writing all pages...\r\n");
 
-        page_program(addr, pattern_base);
+    // uint32_t page;
+    // for (page = 0; page < NUM_PAGES; page++) {
+    //     uint32_t addr         = page * PAGE_SIZE;
+    //     uint32_t pattern_base = addr & 0xFF; // byte offset wraps at 256
 
-        if ((page & 0xFF) == 0xFF) {
-            print("Written page ");
-            print_dec(page + 1);
-            print(" / ");
-            print_dec(NUM_PAGES);
-            print("\r\n");
-        }
-    }
+    //     page_program(addr, pattern_base);
 
-    print("Write complete\r\n");
+    //     if ((page & 0xFF) == 0xFF) {
+    //         print("Written page ");
+    //         print_dec(page + 1);
+    //         print(" / ");
+    //         print_dec(NUM_PAGES);
+    //         print("\r\n");
+    //     }
+    // }
 
-    // =========================================================
-    // PHASE 3: Verify all pages
-    // =========================================================
-    print("Verifying...\r\n");
+    // print("Write complete\r\n");
 
-    uint32_t fail_count = 0;
-    for (page = 0; page < NUM_PAGES; page++) {
-        uint32_t addr         = page * PAGE_SIZE;
-        uint32_t pattern_base = addr & 0xFF;
+    // // =========================================================
+    // // PHASE 3: Verify all pages
+    // // =========================================================
+    // print("Verifying...\r\n");
 
-        if (!verify_page(addr, pattern_base)) {
-            fail_count++;
-        }
+    // uint32_t fail_count = 0;
+    // for (page = 0; page < NUM_PAGES; page++) {
+    //     uint32_t addr         = page * PAGE_SIZE;
+    //     uint32_t pattern_base = addr & 0xFF;
 
-        if ((page & 0xFF) == 0xFF) {
-            print("Verified page ");
-            print_dec(page + 1);
-            print(" / ");
-            print_dec(NUM_PAGES);
-            print("\r\n");
-        }
-    }
+    //     if (!verify_page(addr, pattern_base)) {
+    //         fail_count++;
+    //     }
 
-    if (fail_count == 0) {
-        print("All pages verified OK!\r\n");
-    } else {
-        print("FAILED pages: ");
-        print_dec(fail_count);
-        print("\r\n");
-    }
+    //     if ((page & 0xFF) == 0xFF) {
+    //         print("Verified page ");
+    //         print_dec(page + 1);
+    //         print(" / ");
+    //         print_dec(NUM_PAGES);
+    //         print("\r\n");
+    //     }
+    // }
+
+    // if (fail_count == 0) {
+    //     print("All pages verified OK!\r\n");
+    // } else {
+    //     print("FAILED pages: ");
+    //     print_dec(fail_count);
+    //     print("\r\n");
+    // }
 
     while (1);
     return 0;
