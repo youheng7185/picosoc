@@ -38,7 +38,7 @@ module qspi_nor_master (
 );
 
     // parameter DIV = 10; // input 50mhz, output 2.5mhz
-    parameter DIV = 2;
+    parameter DIV = 3;
 
     reg [7:0] clk_divider_counter;
     reg clk_rise;

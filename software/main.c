@@ -443,6 +443,9 @@ static int verify_page_lfsr(uint32_t addr, uint32_t pattern_base) {
             print("\r\n");
         }
     }
+    if (pass) {
+        print("passed\r\n");
+    }
     return pass;
 }
 
@@ -475,85 +478,85 @@ int main() {
     print_hex(qspi[REG_DATA], 8);
     print("\r\n");
 
-    sector_erase(0x00000000);
-    page_program_lfsr(0x000000, 0);
-    verify_page_lfsr(0x000000, 0);
+    // sector_erase(0x00000000);
+    // page_program_lfsr(0x000000, 0);
+    // verify_page_lfsr(0x000000, 0);
 
-    while(1);
-    // // =========================================================
-    // // PHASE 1: Erase all sectors
-    // // =========================================================
-    // print("Erasing entire 8MB flash...\r\n");
+    // =========================================================
+    // PHASE 1: Erase all sectors
+    // =========================================================
+    print("Erasing entire 8MB flash...\r\n");
 
-    // uint32_t sector;
-    // for (sector = 0; sector < NUM_SECTORS; sector++) {
-    //     uint32_t addr = sector * SECTOR_SIZE;
-    //     sector_erase(addr);
+    uint32_t sector;
+    for (sector = 0; sector < NUM_SECTORS; sector++) {
+        uint32_t addr = sector * SECTOR_SIZE;
+        sector_erase(addr);
 
-    //     if ((sector & 0xF) == 0xF) {
-    //         print("Erased sector ");
-    //         print_dec(sector + 1);
-    //         print(" / ");
-    //         print_dec(NUM_SECTORS);
-    //         print("\r\n");
-    //     }
-    // }
+        if ((sector & 0xF) == 0xF) {
+            print("Erased sector ");
+            print_dec(sector + 1);
+            print(" / ");
+            print_dec(NUM_SECTORS);
+            print("\r\n");
+        }
+    }
 
-    // print("Erase complete\r\n");
+    print("Erase complete\r\n");
 
-    // // =========================================================
-    // // PHASE 2: Write all pages
-    // // =========================================================
-    // print("Writing all pages...\r\n");
+    // =========================================================
+    // PHASE 2: Write all pages
+    // =========================================================
+    print("Writing all pages...\r\n");
 
-    // uint32_t page;
-    // for (page = 0; page < NUM_PAGES; page++) {
-    //     uint32_t addr         = page * PAGE_SIZE;
-    //     uint32_t pattern_base = addr & 0xFF; // byte offset wraps at 256
+    uint32_t page;
+    for (page = 0; page < NUM_PAGES; page++) {
+        uint32_t addr         = page * PAGE_SIZE;
+        uint32_t pattern_base = addr & 0xFF; // byte offset wraps at 256
 
-    //     page_program(addr, pattern_base);
+        //page_program(addr, pattern_base);
+        page_program_lfsr(addr, 0);
 
-    //     if ((page & 0xFF) == 0xFF) {
-    //         print("Written page ");
-    //         print_dec(page + 1);
-    //         print(" / ");
-    //         print_dec(NUM_PAGES);
-    //         print("\r\n");
-    //     }
-    // }
+        if ((page & 0xFF) == 0xFF) {
+            print("Written page ");
+            print_dec(page + 1);
+            print(" / ");
+            print_dec(NUM_PAGES);
+            print("\r\n");
+        }
+    }
 
-    // print("Write complete\r\n");
+    print("Write complete\r\n");
 
-    // // =========================================================
-    // // PHASE 3: Verify all pages
-    // // =========================================================
-    // print("Verifying...\r\n");
+    // =========================================================
+    // PHASE 3: Verify all pages
+    // =========================================================
+    print("Verifying...\r\n");
 
-    // uint32_t fail_count = 0;
-    // for (page = 0; page < NUM_PAGES; page++) {
-    //     uint32_t addr         = page * PAGE_SIZE;
-    //     uint32_t pattern_base = addr & 0xFF;
+    uint32_t fail_count = 0;
+    for (page = 0; page < NUM_PAGES; page++) {
+        uint32_t addr         = page * PAGE_SIZE;
+        uint32_t pattern_base = addr & 0xFF;
 
-    //     if (!verify_page(addr, pattern_base)) {
-    //         fail_count++;
-    //     }
+        if (!verify_page_lfsr(addr, 0)) {
+            fail_count++;
+        }
 
-    //     if ((page & 0xFF) == 0xFF) {
-    //         print("Verified page ");
-    //         print_dec(page + 1);
-    //         print(" / ");
-    //         print_dec(NUM_PAGES);
-    //         print("\r\n");
-    //     }
-    // }
+        if ((page & 0xFF) == 0xFF) {
+            print("Verified page ");
+            print_dec(page + 1);
+            print(" / ");
+            print_dec(NUM_PAGES);
+            print("\r\n");
+        }
+    }
 
-    // if (fail_count == 0) {
-    //     print("All pages verified OK!\r\n");
-    // } else {
-    //     print("FAILED pages: ");
-    //     print_dec(fail_count);
-    //     print("\r\n");
-    // }
+    if (fail_count == 0) {
+        print("All pages verified OK!\r\n");
+    } else {
+        print("FAILED pages: ");
+        print_dec(fail_count);
+        print("\r\n");
+    }
 
     while (1);
     return 0;
