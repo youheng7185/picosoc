@@ -242,6 +242,40 @@ int main(int argc, char **argv) {
     dut->start_i = 0;
     tick(dut, tfp);
 
+    /*
+        page program unaligned
+    */
+
+    dut->rx_fifo_data_wr_en = 1;
+
+    for (uint32_t i = 0; i < 62; i++) {
+        data2[i] = (((i * 4) + 0) << 0)  |
+                (((i * 4) + 1) << 8)  |
+                (((i * 4) + 2) << 16) |
+                (((i * 4) + 3) << 24);
+        dut->rx_fifo_data_din = data2[i];
+        tick(dut, tfp);
+    }
+    dut->rx_fifo_data_din = 0xFF00FF00;
+    tick(dut, tfp);
+    dut->rx_fifo_data_din = 0x03020100;
+    tick(dut, tfp);    
+
+    dut->rx_fifo_data_wr_en = 0;
+
+    tick(dut, tfp);
+    dut->instr_i = 0x02; // fixme, its 0x02 actually
+    dut->data_mode_i = 1;
+    dut->data_cnt_i = 10; // 11 bytes
+    dut->has_address_i = 1;
+    dut->data_dir_i = 1;    
+    dut->addr_i = 0x00AABB0C;
+    dut->start_i = 1;
+
+    delay(dut, tfp, 10000);
+    dut->start_i = 0;
+    tick(dut, tfp);
+
 
     std::cout << "finished test\n";
 
