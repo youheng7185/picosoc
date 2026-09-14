@@ -38,7 +38,7 @@ module qspi_nor_master (
 );
 
     // parameter DIV = 10; // input 50mhz, output 2.5mhz
-    parameter DIV = 3;
+    parameter DIV = 2;
 
     reg [7:0] clk_divider_counter;
     reg clk_rise;
@@ -115,10 +115,9 @@ module qspi_nor_master (
     reg [7:0] data_to_write [0:3];
 
     localparam FIFO_IDLE       = 4'd0,
-                FIFO_RECEIVE_FETCH_SIGNAL    = 4'd1,
-                FIFO_DEASSERT_READ_REQUEST   = 4'd2,
-                FIFO_WRITE_INTO_DATA_TO_WRITE   = 4'd3,
-                FIFO_WRITE_DONE   = 4'd4;
+                FIFO_DEASSERT_READ_REQUEST   = 4'd1,
+                FIFO_WRITE_INTO_DATA_TO_WRITE   = 4'd2,
+                FIFO_WRITE_DONE   = 4'd3;
 
     reg [3:0] fifo_state;
     reg fifo_rd_req;
@@ -133,13 +132,9 @@ module qspi_nor_master (
             case (fifo_state)
                 FIFO_IDLE: begin
                     if (fifo_rd_req_set) begin
-                        fifo_state <= FIFO_RECEIVE_FETCH_SIGNAL;
+                        fifo_rd_req <= 1'b1;
+                        fifo_state <= FIFO_DEASSERT_READ_REQUEST;
                     end
-                end
-
-                FIFO_RECEIVE_FETCH_SIGNAL: begin
-                    fifo_rd_req <= 1'b1;
-                    fifo_state <= FIFO_DEASSERT_READ_REQUEST;
                 end
 
                 FIFO_DEASSERT_READ_REQUEST: begin
